@@ -22,11 +22,7 @@ When behavior deviates from baseline, you get alerts.
 
 ### 1. Install
 
-```bash
-pip install agent-drift-detector[dashboard]
-```
-
-Or from source:
+From source:
 ```bash
 git clone https://github.com/lukehebe/agent-drift.git
 cd agent-drift-detector
