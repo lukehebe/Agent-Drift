@@ -212,7 +212,11 @@ export AGENT_DRIFT_DIR=~/.agent-drift
 │  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
-
+This is a working proof of concept. Many more enhancements to come to the dashboard and backend engineering detections such as:
+- Agent quarantine button
+- Community-sourced injection pattern feeds for better detection (similar to Sigma rules or YARA)
+- Optional Honeypot - Register fake tools that should never be called under normal operation. Any invocation is instant high-confidence Indicator of Compromise.
+- Enhanced behavioral analysis
 
 
 ## License
