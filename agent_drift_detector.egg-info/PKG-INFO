@@ -1,0 +1,204 @@
+Metadata-Version: 2.4
+Name: agent-drift-detector
+Version: 0.1.0
+Summary: Runtime behavioral monitoring for AI agents - detects silent compromise through behavioral drift analysis
+Home-page: https://github.com/openclaw/agent-drift-detector
+Author: Buster
+Author-email: Buster <buster@openclaw.ai>
+License: MIT
+Project-URL: Homepage, https://github.com/openclaw/agent-drift-detector
+Project-URL: Documentation, https://github.com/openclaw/agent-drift-detector#readme
+Project-URL: Repository, https://github.com/openclaw/agent-drift-detector
+Project-URL: Issues, https://github.com/openclaw/agent-drift-detector/issues
+Keywords: ai,agents,security,monitoring,drift,detection,behavioral,analysis
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Security
+Classifier: Topic :: System :: Monitoring
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0; extra == "dev"
+Requires-Dist: black>=23.0; extra == "dev"
+Requires-Dist: mypy>=1.0; extra == "dev"
+Requires-Dist: ruff>=0.1.0; extra == "dev"
+Dynamic: author
+Dynamic: home-page
+Dynamic: license-file
+Dynamic: requires-python
+
+# Agent Drift Detector
+
+**`strace` for AI agent decisions.**
+
+A runtime behavioral monitoring system that detects silent compromise in AI agents through behavioral drift analysis. No prompt inspection, no content logging, no model access required.
+
+## The Problem
+
+Modern AI agents (autonomous bots, tool-using LLMs) introduce a new attack surface: **behavior over time**. Traditional security fails to detect:
+
+- Memory poisoning
+- Toolchain manipulation  
+- Supply-chain prompt attacks
+- Gradual behavioral manipulation
+- Silent jailbreaks
+
+## The Solution
+
+This system wraps agent execution at runtime and monitors **what agents do**, not what they say. It detects drift from known-good behavioral patterns using structural signals.
+
+## Features
+
+- **Zero-config baseline capture** - First run is trusted, stored automatically
+- **Passive monitoring** - No prompt/output inspection, no secret leakage
+- **Model-agnostic** - Works with any agent architecture
+- **Deterministic & auditable** - Distance metrics, not black-box ML
+- **Canary task injection** - Optional high-signal drift detection
+- **Minimal overhead** - Process-boundary observation only
+
+## Installation
+
+```bash
+pip install agent-drift-detector
+# or
+pip install -e .
+```
+
+## Quick Start
+
+```bash
+# Wrap any agent command - first run creates baseline
+agent-drift wrap "python my_agent.py"
+
+# Subsequent runs compare against baseline
+agent-drift wrap "python my_agent.py"
+
+# Check drift score manually
+agent-drift status
+
+# View baseline
+agent-drift baseline show
+
+# Reset baseline (re-trust current behavior)
+agent-drift baseline reset
+
+# Enable canary tasks
+agent-drift wrap --canary "python my_agent.py"
+```
+
+## What It Monitors
+
+| Signal | Description |
+|--------|-------------|
+| Tool invocations | Type, order, frequency of tool calls |
+| File system writes | Paths, access patterns (not content) |
+| Network activity | Call frequency, destination classes |
+| Decision cycles | Step boundaries, retries, loops |
+| Timing profiles | Latency between decisions |
+
+## How Detection Works
+
+1. **Vectorization**: Behavior converted to structural vectors
+   - Tool sequence graphs
+   - Action frequency histograms
+   - Timing deltas
+   - Confidence entropy (retries, self-corrections)
+
+2. **Comparison**: Vectors compared against baseline
+   - Cosine distance for sequence similarity
+   - KL divergence for distribution shifts
+   - Threshold-free anomaly scoring
+
+3. **Alerting**: Drift score indicates compromise likelihood
+   - 0.0-0.3: Normal variance
+   - 0.3-0.6: Suspicious drift
+   - 0.6+: Likely compromise
+
+## Canary Tasks
+
+Optional injection of constant, trivial tasks:
+
+```bash
+agent-drift wrap --canary "python my_agent.py"
+```
+
+Canary tasks:
+- Run silently in background
+- Produce predictable behavior
+- Immune to workload variance
+- High-signal drift indicator
+
+## Configuration
+
+**None required.** Baseline stored at `~/.agent-drift/baseline.json`
+
+Optional environment variables:
+```bash
+AGENT_DRIFT_DIR=~/.agent-drift      # Storage location
+AGENT_DRIFT_ALERT_THRESHOLD=0.5     # Alert threshold (default: 0.5)
+AGENT_DRIFT_CANARY_INTERVAL=60      # Canary frequency in seconds
+```
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    Your Agent                        │
+└─────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────┐
+│              Agent Drift Detector                    │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │
+│  │   Shim      │  │ Vectorizer  │  │  Detector   │  │
+│  │  (capture)  │→ │ (transform) │→ │  (compare)  │  │
+│  └─────────────┘  └─────────────┘  └─────────────┘  │
+│         │                                │           │
+│         ▼                                ▼           │
+│  ┌─────────────┐                  ┌─────────────┐   │
+│  │  Baseline   │                  │   Alerts    │   │
+│  │   Store     │                  │             │   │
+│  └─────────────┘                  └─────────────┘   │
+└─────────────────────────────────────────────────────┘
+```
+
+## Security Properties
+
+- ✅ No prompt storage
+- ✅ No secret leakage  
+- ✅ No model access required
+- ✅ Operates offline
+- ✅ Easy to install/remove
+- ✅ Minimal runtime overhead
+
+## Detects
+
+- Gradual behavioral manipulation
+- Tool preference hijacking
+- Validation step erosion
+- Supply-chain prompt poisoning
+- Non-obvious alignment drift
+- Memory poisoning
+- Instruction corruption
+- Toolchain tampering
+- Silent jailbreaks
+
+## License
+
+MIT
+
+## Author
+
+Built by Buster for Luke The Man 🛡️
