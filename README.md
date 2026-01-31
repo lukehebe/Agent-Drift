@@ -28,7 +28,7 @@ pip install agent-drift-detector[dashboard]
 
 Or from source:
 ```bash
-git clone https://github.com/lukehebe/agent-drift
+git clone https://github.com/lukehebe/agent-drift.git
 cd agent-drift-detector
 pip install -e ".[dashboard]"
 ```
