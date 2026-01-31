@@ -1,8 +1,8 @@
-# 🛡️ Agent Drift
+# Agent Drift
 
 **Runtime behavioral monitoring for AI agents.** Detect prompt injection, memory poisoning, and behavioral drift in real-time.
 
-Think `strace` for AI agent decisions, or a SIEM for your autonomous systems.
+Think `IDS` for AI agent decisions, or a SIEM for your autonomous systems.
 
 ## Why Agent Drift?
 
