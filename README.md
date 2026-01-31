@@ -16,6 +16,8 @@ Agent Drift monitors behavioral patterns:
 
 When behavior deviates from baseline, you get alerts.
 
+<img width="1838" height="794" alt="image" src="https://github.com/user-attachments/assets/a06206f5-e5ee-4314-a762-5321312835bb" />
+
 ## Quick Start
 
 ### 1. Install
@@ -26,7 +28,7 @@ pip install agent-drift-detector[dashboard]
 
 Or from source:
 ```bash
-git clone https://github.com/yourusername/agent-drift-detector
+git clone https://github.com/lukehebe/agent-drift
 cd agent-drift-detector
 pip install -e ".[dashboard]"
 ```
@@ -60,13 +62,13 @@ curl -X POST localhost:5000/end
 
 ## Features
 
-### 📊 Real-Time SIEM Dashboard
+### Real-Time SIEM Dashboard
 - WebSocket-powered live updates
 - Drift score timeline
 - Component breakdown (tool sequence, frequency, timing, etc.)
 - Alert feed with acknowledgment
 
-### 💉 Prompt Injection Detection
+### Prompt Injection Detection
 10 detection patterns with severity levels:
 
 | Pattern | Severity | Example |
@@ -82,12 +84,12 @@ curl -X POST localhost:5000/end
 | Privilege Escalation | 🟡 Warning | "sudo", "admin access" |
 | Indirect Injection | 🟡 Warning | "NOTE TO AI:", "URGENT:" |
 
-### 📈 Behavioral Drift Detection
+### Behavioral Drift Detection
 - Baseline learning from normal agent runs
 - Multi-component drift scoring
 - Anomaly detection with explanations
 
-### 🐤 Canary Tasks
+### Canary Tasks
 Inject known-answer tasks to verify agent integrity.
 
 ## API Reference
@@ -174,6 +176,7 @@ Set the storage directory:
 export AGENT_DRIFT_DIR=~/.agent-drift
 ```
 
+
 ## How It Works
 
 1. **Baseline Learning**: First few runs establish normal behavior patterns
@@ -213,6 +216,8 @@ export AGENT_DRIFT_DIR=~/.agent-drift
 │  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+
 
 ## License
 
