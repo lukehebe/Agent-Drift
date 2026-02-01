@@ -9,7 +9,7 @@ description = "Runtime behavioral monitoring for AI agents - detects silent comp
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Buster", email = "buster@openclaw.ai"}
+    {name = "luke"}
 ]
 requires-python = ">=3.8"
 classifiers = [
@@ -44,10 +44,10 @@ dev = [
 agent-drift = "src.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/openclaw/agent-drift-detector"
-Documentation = "https://github.com/openclaw/agent-drift-detector#readme"
-Repository = "https://github.com/openclaw/agent-drift-detector"
-Issues = "https://github.com/openclaw/agent-drift-detector/issues"
+Homepage = "https://github.com/lukehebe/Agent-Drift.git"
+Documentation = "https://github.com/lukehebe/Agent-Drift.git"
+Repository = "https://github.com/lukehebe/Agent-Drift.git"
+Issues = "https://github.com/lukehebe/Agent-Drift.git"
 
 [tool.setuptools.packages.find]
 where = ["."]
