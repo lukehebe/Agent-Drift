@@ -44,8 +44,8 @@ dev = [
 agent-drift = "src.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/lukehebe/Agent-Drift.git"
-Documentation = "https://github.com/lukehebe/Agent-Drift.git"
+Homepage = "https://github.com/lukehebe/Agent-Drift/tree/main"
+Documentation = "https://github.com/lukehebe/Agent-Drift/tree/main"
 Repository = "https://github.com/lukehebe/Agent-Drift.git"
 Issues = "https://github.com/lukehebe/Agent-Drift.git"
 
