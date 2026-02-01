@@ -32,9 +32,23 @@ git clone https://github.com/yourusername/agent-drift-detector
 cd agent-drift-detector
 pip install -e ".[dashboard]"
 ```
+### 2. Integrate Your Agent
 
+Agent Drift integrates with [OpenClaw](https://github.com/openclaw/openclaw) agents:
 
-### 2. Start the Dashboard
+```bash
+# One-time setup
+agent-drift setup
+
+# Or manually add to your agent's tool hooks
+```
+
+Set the storage directory:
+```bash
+export AGENT_DRIFT_DIR=~/.agent-drift
+```
+
+### 3. Start the Dashboard
 
 ```bash
 agent-drift start
@@ -42,7 +56,6 @@ agent-drift start
 
 Opens the SIEM dashboard at **http://localhost:5000**
 
-### 3. Integrate Your Agent
 
 Your agent reports tool usage by POSTing events:
 
@@ -60,6 +73,21 @@ curl -X POST localhost:5000/check \
 # End session and get drift report
 curl -X POST localhost:5000/end
 ```
+
+
+## CLI Commands
+
+```bash
+agent-drift start              # Start SIEM dashboard (port 5000)
+agent-drift start --port 8080  # Custom port
+agent-drift status             # Show baseline status
+agent-drift baseline show      # Display baseline details
+agent-drift baseline reset     # Reset baseline
+agent-drift history            # Show detection history
+agent-drift canary             # Run canary tasks
+agent-drift simulate           # Run attack simulations
+```
+
 
 ## Features
 
@@ -143,39 +171,6 @@ Reset the behavioral baseline.
 
 ### GET /api/state
 Get full dashboard state (drift history, alerts, injections, etc.)
-
-## OpenClaw Integration
-
-Agent Drift integrates with [OpenClaw](https://github.com/openclaw/openclaw) agents:
-
-```bash
-# One-time setup
-agent-drift setup
-
-# Or manually add to your agent's tool hooks
-```
-
-The setup script patches OpenClaw to report tool events automatically.
-
-## CLI Commands
-
-```bash
-agent-drift start              # Start SIEM dashboard (port 5000)
-agent-drift start --port 8080  # Custom port
-agent-drift status             # Show baseline status
-agent-drift baseline show      # Display baseline details
-agent-drift baseline reset     # Reset baseline
-agent-drift history            # Show detection history
-agent-drift canary             # Run canary tasks
-agent-drift simulate           # Run attack simulations
-```
-
-## Configuration
-
-Set the storage directory:
-```bash
-export AGENT_DRIFT_DIR=~/.agent-drift
-```
 
 
 ## How It Works
