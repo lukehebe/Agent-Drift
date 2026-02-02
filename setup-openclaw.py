@@ -74,20 +74,20 @@ def patch_openclaw(openclaw_path: Path):
     
     # Check if already patched
     if 'Drift Monitor Hook' in content:
-        print("✅ OpenClaw is already patched!")
+        print(" OpenClaw is already patched!")
         return True
     
     # Create backup
     backup = target.with_suffix('.js.backup')
     if not backup.exists():
         shutil.copy(target, backup)
-        print(f"📦 Created backup: {backup}")
+        print(f" Created backup: {backup}")
     
     # Find insertion point: after "type: "tool_execution_end"" block closes
     marker = 'type: "tool_execution_end"'
     
     if marker not in content:
-        print(f"❌ Could not find insertion point in {target}")
+        print(f" Could not find insertion point in {target}")
         return False
     
     # Find the position after the stream.push block
@@ -115,32 +115,32 @@ def patch_openclaw(openclaw_path: Path):
     new_content = content[:insert_pos] + PATCH_CODE + content[insert_pos:]
     
     target.write_text(new_content)
-    print("✅ Patched OpenClaw!")
+    print(" Patched OpenClaw!")
     return True
 
 def main():
     print()
-    print("  🛡️  Agent Drift Detector - OpenClaw Setup")
+    print("    Agent Drift Detector - OpenClaw Setup")
     print("  " + "=" * 45)
     print()
     
     openclaw = find_openclaw()
     
     if not openclaw:
-        print("  ❌ Could not find OpenClaw installation")
+        print("   Could not find OpenClaw installation")
         print()
         print("  Make sure OpenClaw is installed:")
         print("    npm install -g openclaw")
         print()
         sys.exit(1)
     
-    print(f"  📍 Found OpenClaw: {openclaw}")
+    print(f"   Found OpenClaw: {openclaw}")
     print()
     
     if patch_openclaw(openclaw):
         print()
         print("  " + "=" * 45)
-        print("  ✨ Setup complete!")
+        print("   Setup complete!")
         print()
         print("  USAGE:")
         print("    Terminal 1:  agent-drift start")
