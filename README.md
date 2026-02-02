@@ -61,17 +61,17 @@ Your agent reports tool usage by POSTing events:
 
 ```bash
 # Track tool usage
-curl -X POST localhost:5000/tool \
+curl -X POST localhost:5001/tool \
   -H "Content-Type: application/json" \
   -d '{"tool": "exec", "args": {"command": "ls"}, "output": "..."}'
 
 # Check content for prompt injection
-curl -X POST localhost:5000/check \
+curl -X POST localhost:5001/check \
   -H "Content-Type: application/json" \
   -d '{"content": "user input here", "source": "chat"}'
 
 # End session and get drift report
-curl -X POST localhost:5000/end
+curl -X POST localhost:5001/end
 ```
 
 
