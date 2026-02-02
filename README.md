@@ -20,6 +20,8 @@ When behavior deviates from baseline, you get alerts.
 
 ## Quick Start
 
+**As of version 2026.1.30 and beyond automatic installation is unavailable due to Openclaw removing steerable-agent-loop.js manual installation still works. This will be fixed shortly**
+
 ### 1. Install
 
 ```bash
