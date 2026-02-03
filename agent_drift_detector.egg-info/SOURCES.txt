@@ -10,7 +10,9 @@ setup.py
 ./src/canary.py
 ./src/cli.py
 ./src/detector.py
+./src/listener.py
 ./src/models.py
+./src/monitor.py
 ./src/shim.py
 ./src/vectorizer.py
 ./src/dashboard/__init__.py
@@ -22,9 +24,7 @@ setup.py
 ./tests/test_baseline.py
 ./tests/test_canary.py
 ./tests/test_comprehensive.py
-./tests/test_detector.py
 ./tests/test_detector_unit.py
-./tests/test_vectorizer.py
 ./tests/test_vectorizer_unit.py
 agent_drift_detector.egg-info/PKG-INFO
 agent_drift_detector.egg-info/SOURCES.txt
@@ -52,7 +52,5 @@ tests/__init__.py
 tests/test_baseline.py
 tests/test_canary.py
 tests/test_comprehensive.py
-tests/test_detector.py
 tests/test_detector_unit.py
-tests/test_vectorizer.py
 tests/test_vectorizer_unit.py

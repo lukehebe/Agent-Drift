@@ -374,5 +374,67 @@ class TestVarianceBounds:
         assert len(bounds) == 0 or all(b.get("std", 0) == 0 for b in bounds.values())
 
 
+class TestDecisionFeatures:
+    """Tests for decision feature extraction."""
+    
+    def test_retry_rate(self, vectorizer):
+        """Test retry rate calculation."""
+        trace = BehaviorTrace(run_id="t", start_time=0, end_time=1)
+        trace.decision_cycles = [
+            DecisionCycle(1, 0, 0.5, 2, 1, 0),
+            DecisionCycle(2, 0.5, 1, 2, 1, 0),
+        ]
+        
+        vector = vectorizer.vectorize(trace)
+        
+        assert vector.total_cycles == 2
+        assert vector.total_retries == 2
+        assert vector.retry_rate == 1.0
+    
+    def test_self_corrections(self, vectorizer):
+        """Test self-correction tracking."""
+        trace = BehaviorTrace(run_id="t", start_time=0, end_time=1)
+        trace.decision_cycles = [
+            DecisionCycle(1, 0, 1, 3, 0, 2),
+        ]
+        
+        vector = vectorizer.vectorize(trace)
+        
+        assert vector.total_self_corrections == 2
+
+
+class TestFullVectorization:
+    """Tests for complete vectorization with all features."""
+    
+    def test_output_features(self, vectorizer):
+        """Test output feature extraction."""
+        trace = BehaviorTrace(
+            run_id="t",
+            start_time=0,
+            end_time=1,
+            stdout_line_count=50,
+            stderr_line_count=5,
+        )
+        
+        vector = vectorizer.vectorize(trace)
+        
+        assert vector.stdout_lines == 50
+        assert vector.stderr_lines == 5
+        assert 0 < vector.stderr_ratio < 1
+    
+    def test_file_op_frequency(self, vectorizer):
+        """Test file operation frequency tracking."""
+        trace = BehaviorTrace(run_id="t", start_time=0, end_time=1)
+        trace.file_accesses = [
+            FileAccess("a.txt", "read", 0),
+            FileAccess("b.txt", "write", 0),
+            FileAccess("c.txt", "read", 0),
+        ]
+        
+        vector = vectorizer.vectorize(trace)
+        
+        assert vector.file_op_frequency == {"read": 2, "write": 1}
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

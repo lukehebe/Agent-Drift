@@ -385,5 +385,25 @@ class TestLCSPerformance:
         assert elapsed < 5.0  # 5 second timeout
 
 
+class TestBaselineUpdate:
+    """Tests for baseline update behavior."""
+    
+    def test_baseline_updates_on_trusted_run(self, detector, baseline_mgr):
+        """Test that baseline updates when drift is low."""
+        # Create baseline
+        trace1 = make_trace("baseline-001", tools=["read", "write", "exec"])
+        detector.detect(trace1)
+        
+        initial_count = baseline_mgr.baseline.run_count
+        
+        # Similar run (should have low drift)
+        trace2 = make_trace("similar-001", tools=["read", "write", "exec"])
+        report = detector.detect(trace2)
+        
+        # Baseline should update if drift is within threshold
+        if report.overall_drift_score <= 0.3:
+            assert baseline_mgr.baseline.run_count > initial_count
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
