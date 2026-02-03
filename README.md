@@ -86,6 +86,7 @@ agent-drift baseline reset     # Reset baseline
 agent-drift history            # Show detection history
 agent-drift canary             # Run canary tasks
 agent-drift simulate           # Run attack simulations
+agent-drift setup              # Setup agent-drift
 ```
 
 
