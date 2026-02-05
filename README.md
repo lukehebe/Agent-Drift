@@ -29,7 +29,7 @@ pip install agent-drift-detector[dashboard]
 Or from source:
 ```bash
 git clone https://github.com/lukehebe/agent-drift.git
-cd agent-drift-detector
+cd agent-drift
 pip install -e ".[dashboard]"
 ```
 ### 2. Integrate Your Agent
