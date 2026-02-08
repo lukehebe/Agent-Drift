@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Drift - SIEM Dashboard</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --border-color: #30363d;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-yellow: #d29922;
+            --accent-red: #f85149;
+            --accent-purple: #a371f7;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+        
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .header-status {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .status-dot.connected { background: var(--accent-green); }
+        .status-dot.disconnected { background: var(--accent-red); }
+        .status-dot.monitoring { background: var(--accent-blue); animation: pulse 2s infinite; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr 350px;
+            gap: 16px;
+            padding: 16px 24px;
+            min-height: calc(100vh - 65px);
+        }
+        
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-body {
+            padding: 16px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .stat-card {
+            background: var(--bg-tertiary);
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+        
+        .stat-card.critical .stat-value { color: var(--accent-red); }
+        .stat-card.warning .stat-value { color: var(--accent-yellow); }
+        .stat-card.normal .stat-value { color: var(--accent-green); }
+        
+        .alert-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .alert-item {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        
+        .alert-item:last-child { border-bottom: none; }
+        
+        .alert-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .alert-badge.critical { background: var(--accent-red); color: white; }
+        .alert-badge.high { background: var(--accent-yellow); color: black; }
+        .alert-badge.honeypot { background: #ff6b6b; color: white; }
+        .alert-badge.owasp { background: var(--accent-purple); color: white; }
+        
+        .alert-content { flex: 1; }
+        .alert-title { font-weight: 500; margin-bottom: 4px; }
+        .alert-time { font-size: 12px; color: var(--text-secondary); }
+        
+        .tool-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .tool-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+        
+        .tool-item:last-child { border-bottom: none; }
+        .tool-item.honeypot { background: rgba(248, 81, 73, 0.1); }
+        
+        .tool-name { font-family: monospace; }
+        .tool-time { color: var(--text-secondary); font-size: 12px; }
+        
+        .honeypot-config {
+            margin-top: 16px;
+        }
+        
+        .honeypot-input {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .honeypot-input input {
+            flex: 1;
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+        
+        .honeypot-input button {
+            padding: 8px 16px;
+            background: var(--accent-blue);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        
+        .honeypot-input button:hover { opacity: 0.9; }
+        
+        .honeypot-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .honeypot-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+            font-family: monospace;
+        }
+        
+        .honeypot-item:last-child { border-bottom: none; }
+        
+        .honeypot-remove {
+            background: none;
+            border: none;
+            color: var(--accent-red);
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .chart-container {
+            height: 200px;
+        }
+        
+        .score-display {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .score-value {
+            font-size: 48px;
+            font-weight: 700;
+        }
+        
+        .score-value.normal { color: var(--accent-green); }
+        .score-value.high { color: var(--accent-yellow); }
+        .score-value.critical { color: var(--accent-red); }
+        
+        .component-bars {
+            margin-top: 16px;
+        }
+        
+        .component-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        
+        .component-name {
+            width: 100px;
+            color: var(--text-secondary);
+        }
+        
+        .component-bar-bg {
+            flex: 1;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .component-bar {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        .component-value {
+            width: 50px;
+            text-align: right;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Agent Drift - SIEM Dashboard</h1>
+        <div class="header-status">
+            <div class="status-indicator">
+                <span id="connStatus" class="status-dot disconnected"></span>
+                <span id="connText">Disconnected</span>
+            </div>
+            <div class="status-indicator">
+                <span id="monitorStatus" class="status-dot"></span>
+                <span id="monitorText">Idle</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="left-column">
+            <div class="stats-grid">
+                <div class="stat-card normal">
+                    <div class="stat-value" id="totalRuns">0</div>
+                    <div class="stat-label">Total Runs</div>
+                </div>
+                <div class="stat-card" id="criticalCard">
+                    <div class="stat-value" id="criticalCount">0</div>
+                    <div class="stat-label">Critical</div>
+                </div>
+                <div class="stat-card" id="honeypotCard">
+                    <div class="stat-value" id="honeypotAlerts">0</div>
+                    <div class="stat-label">Honeypot Alerts</div>
+                </div>
+                <div class="stat-card" id="owaspCard">
+                    <div class="stat-value" id="owaspDetections">0</div>
+                    <div class="stat-label">OWASP Threats</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">Drift Score Timeline</div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="driftChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: 16px;">
+                <div class="card-header">Current Drift Score</div>
+                <div class="card-body">
+                    <div class="score-display">
+                        <div class="score-value normal" id="currentScore">0.000</div>
+                        <div id="alertLevel">Normal</div>
+                    </div>
+                    <div class="component-bars" id="componentBars"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="center-column">
+            <div class="card">
+                <div class="card-header">
+                    Alerts
+                    <span id="alertCount" style="background: var(--accent-red); color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px;">0</span>
+                </div>
+                <div class="card-body">
+                    <div class="alert-list" id="alertList">
+                        <div class="empty-state">No alerts</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: 16px;">
+                <div class="card-header">Recent Tool Calls</div>
+                <div class="card-body">
+                    <div class="tool-list" id="toolList">
+                        <div class="empty-state">Waiting for tool events...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="right-column">
+            <div class="card">
+                <div class="card-header">Honeypot Tools</div>
+                <div class="card-body">
+                    <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
+                        Tools that should NEVER be called. Access triggers CRITICAL alert.
+                    </p>
+                    <div class="honeypot-config">
+                        <div class="honeypot-input">
+                            <input type="text" id="honeypotInput" placeholder="Tool name...">
+                            <button onclick="addHoneypot()">Add</button>
+                        </div>
+                        <div class="honeypot-list" id="honeypotList">
+                            <div class="empty-state" style="padding: 20px;">No honeypots configured</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: 16px;">
+                <div class="card-header">Baseline Status</div>
+                <div class="card-body">
+                    <div id="baselineInfo">
+                        <div class="empty-state">Loading...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: 16px;">
+                <div class="card-header">OWASP Top 10 LLM Coverage</div>
+                <div class="card-body">
+                    <div style="font-size: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span>LLM01: Prompt Injection</span>
+                            <span style="color: var(--accent-green);">Active</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span>LLM02: Insecure Output</span>
+                            <span style="color: var(--accent-green);">Active</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span>LLM03: Training Poisoning</span>
+                            <span style="color: var(--accent-green);">Active</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span>LLM04: Model DoS</span>
+                            <span style="color: var(--accent-green);">Active</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span>LLM05: Supply Chain</span>
+                            <span style="color: var(--accent-green);">Active</span>
+                        </div>
+                        <div id="owaspExpanded" style="display: none;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span>LLM06: Data Disclosure</span>
+                                <span style="color: var(--accent-green);">Active</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span>LLM07: Plugin Security</span>
+                                <span style="color: var(--accent-green);">Active</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span>LLM08: Excessive Agency</span>
+                                <span style="color: var(--accent-green);">Active</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span>LLM09: Overreliance</span>
+                                <span style="color: var(--accent-green);">Active</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span>LLM10: Model Theft</span>
+                                <span style="color: var(--accent-green);">Active</span>
+                            </div>
+                        </div>
+                        <div style="margin-top: 8px;">
+                            <button onclick="toggleOwasp()" id="owaspToggle" style="background: none; border: none; color: var(--accent-blue); cursor: pointer; font-size: 12px; padding: 0;">
+                                + Show 5 more
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const socket = io();
+        let driftChart = null;
+        
+        socket.on('connect', () => {
+            document.getElementById('connStatus').className = 'status-dot connected';
+            document.getElementById('connText').textContent = 'Connected';
+        });
+        
+        socket.on('disconnect', () => {
+            document.getElementById('connStatus').className = 'status-dot disconnected';
+            document.getElementById('connText').textContent = 'Disconnected';
+        });
+        
+        socket.on('full_state', (data) => {
+            updateStats(data.stats);
+            updateAlerts(data.alerts);
+            updateTools(data.recent_tools);
+            updateHoneypots(data.honeypot);
+            updateBaseline(data.baseline);
+            updateDriftChart(data.drift_history);
+            
+            if (data.monitoring) {
+                document.getElementById('monitorStatus').className = 'status-dot monitoring';
+                document.getElementById('monitorText').textContent = `Monitoring (${data.tool_count} tools)`;
+            } else {
+                document.getElementById('monitorStatus').className = 'status-dot';
+                document.getElementById('monitorText').textContent = 'Idle';
+            }
+            
+            if (data.drift_history.length > 0) {
+                const latest = data.drift_history[data.drift_history.length - 1];
+                updateCurrentScore(latest);
+            }
+        });
+        
+        socket.on('tool_event', (data) => {
+            addToolEvent(data.tool);
+            if (data.honeypot_alert) {
+                showHoneypotAlert(data.honeypot_alert);
+            }
+        });
+        
+        socket.on('drift_update', (data) => {
+            updateCurrentScore(data.report);
+            updateStats(data.stats);
+        });
+        
+        function updateStats(stats) {
+            document.getElementById('totalRuns').textContent = stats.total_runs || 0;
+            document.getElementById('criticalCount').textContent = stats.critical_count || 0;
+            document.getElementById('honeypotAlerts').textContent = stats.honeypot_alerts || 0;
+            document.getElementById('owaspDetections').textContent = stats.owasp_detections || 0;
+            
+            const criticalCard = document.getElementById('criticalCard');
+            criticalCard.className = 'stat-card ' + (stats.critical_count > 0 ? 'critical' : '');
+            
+            const honeypotCard = document.getElementById('honeypotCard');
+            honeypotCard.className = 'stat-card ' + (stats.honeypot_alerts > 0 ? 'critical' : '');
+        }
+        
+        function updateAlerts(alerts) {
+            const list = document.getElementById('alertList');
+            const count = document.getElementById('alertCount');
+            
+            count.textContent = alerts.length;
+            
+            if (alerts.length === 0) {
+                list.innerHTML = '<div class="empty-state">No alerts</div>';
+                return;
+            }
+            
+            list.innerHTML = alerts.slice(-20).reverse().map(alert => {
+                const time = new Date(alert.timestamp * 1000).toLocaleTimeString();
+                let badgeClass = alert.level.toLowerCase();
+                if (alert.type === 'honeypot') badgeClass = 'honeypot';
+                if (alert.type === 'owasp') badgeClass = 'owasp';
+                
+                let title = alert.type === 'honeypot' 
+                    ? `Honeypot: ${alert.tool}`
+                    : alert.type === 'owasp'
+                    ? `OWASP: ${alert.detection?.name || 'Unknown'}`
+                    : `Drift: ${alert.score?.toFixed(3) || 'N/A'}`;
+                
+                return `
+                    <div class="alert-item">
+                        <span class="alert-badge ${badgeClass}">${alert.level}</span>
+                        <div class="alert-content">
+                            <div class="alert-title">${title}</div>
+                            <div class="alert-time">${time} - ${alert.run_id || 'unknown'}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function updateTools(tools) {
+            const list = document.getElementById('toolList');
+            
+            if (tools.length === 0) {
+                list.innerHTML = '<div class="empty-state">Waiting for tool events...</div>';
+                return;
+            }
+            
+            list.innerHTML = tools.slice(-30).reverse().map(t => {
+                const time = new Date(t.time * 1000).toLocaleTimeString();
+                const honeypotClass = t.is_honeypot ? 'honeypot' : '';
+                return `
+                    <div class="tool-item ${honeypotClass}">
+                        <span class="tool-name">${t.tool}${t.is_honeypot ? ' [HONEYPOT]' : ''}</span>
+                        <span class="tool-time">${time}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function updateHoneypots(honeypot) {
+            const list = document.getElementById('honeypotList');
+            const tools = honeypot?.configured_tools || [];
+            
+            if (tools.length === 0) {
+                list.innerHTML = '<div class="empty-state" style="padding: 20px;">No honeypots configured</div>';
+                return;
+            }
+            
+            list.innerHTML = tools.map(tool => `
+                <div class="honeypot-item">
+                    <span>${tool}</span>
+                    <button class="honeypot-remove" onclick="removeHoneypot('${tool}')">&times;</button>
+                </div>
+            `).join('');
+        }
+        
+        function updateBaseline(baseline) {
+            const info = document.getElementById('baselineInfo');
+            
+            if (!baseline.exists) {
+                info.innerHTML = '<div class="empty-state">No baseline - run agent to create</div>';
+                return;
+            }
+            
+            info.innerHTML = `
+                <div style="font-size: 13px;">
+                    <div style="margin-bottom: 8px;">
+                        <strong>Runs:</strong> ${baseline.run_count}
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <strong>Tools:</strong> ${baseline.tool_count}
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <strong>Updated:</strong><br>
+                        <span style="color: var(--text-secondary); font-size: 11px;">
+                            ${new Date(baseline.updated_at).toLocaleString()}
+                        </span>
+                    </div>
+                    ${baseline.poisoning_warning ? '<div style="color: var(--accent-red);">[WARNING] Baseline drift detected</div>' : ''}
+                </div>
+            `;
+        }
+        
+        function updateCurrentScore(report) {
+            const scoreEl = document.getElementById('currentScore');
+            const levelEl = document.getElementById('alertLevel');
+            const barsEl = document.getElementById('componentBars');
+            
+            const score = report.overall_drift_score || 0;
+            scoreEl.textContent = score.toFixed(3);
+            
+            if (report.alert_level === 'CRITICAL') {
+                scoreEl.className = 'score-value critical';
+                levelEl.textContent = 'CRITICAL';
+                levelEl.style.color = 'var(--accent-red)';
+            } else if (report.alert_level === 'HIGH') {
+                scoreEl.className = 'score-value high';
+                levelEl.textContent = 'HIGH';
+                levelEl.style.color = 'var(--accent-yellow)';
+            } else {
+                scoreEl.className = 'score-value normal';
+                levelEl.textContent = 'Normal';
+                levelEl.style.color = 'var(--accent-green)';
+            }
+            
+            // Component bars
+            const components = report.component_scores || {};
+            barsEl.innerHTML = Object.entries(components).map(([name, value]) => {
+                const pct = Math.min(100, value * 100);
+                const color = value > 0.5 ? 'var(--accent-red)' : value > 0.3 ? 'var(--accent-yellow)' : 'var(--accent-green)';
+                return `
+                    <div class="component-row">
+                        <span class="component-name">${name}</span>
+                        <div class="component-bar-bg">
+                            <div class="component-bar" style="width: ${pct}%; background: ${color}"></div>
+                        </div>
+                        <span class="component-value">${value.toFixed(3)}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function updateDriftChart(history) {
+            const ctx = document.getElementById('driftChart').getContext('2d');
+            
+            const data = history.slice(-50);
+            const labels = data.map(h => {
+                const ts = h.timestamp;
+                if (!ts) return 'N/A';
+                const date = new Date(ts * 1000);
+                return date.toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            });
+            const scores = data.map(h => h.overall_drift_score || 0);
+            
+            if (driftChart) {
+                driftChart.data.labels = labels;
+                driftChart.data.datasets[0].data = scores;
+                driftChart.update();
+            } else {
+                driftChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Drift Score',
+                            data: scores,
+                            borderColor: '#58a6ff',
+                            backgroundColor: 'rgba(88, 166, 255, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 1,
+                                grid: { color: '#30363d' },
+                                ticks: { color: '#8b949e' }
+                            },
+                            x: {
+                                grid: { color: '#30363d' },
+                                ticks: { 
+                                    color: '#8b949e',
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    font: { size: 10 }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        return context[0].label;
+                                    },
+                                    label: function(context) {
+                                        return 'Drift Score: ' + context.parsed.y.toFixed(4);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        function addToolEvent(tool) {
+            const list = document.getElementById('toolList');
+            const empty = list.querySelector('.empty-state');
+            if (empty) empty.remove();
+            
+            const time = new Date(tool.time * 1000).toLocaleTimeString();
+            const honeypotClass = tool.is_honeypot ? 'honeypot' : '';
+            const item = document.createElement('div');
+            item.className = `tool-item ${honeypotClass}`;
+            item.innerHTML = `
+                <span class="tool-name">${tool.tool}${tool.is_honeypot ? ' [HONEYPOT]' : ''}</span>
+                <span class="tool-time">${time}</span>
+            `;
+            
+            list.insertBefore(item, list.firstChild);
+            
+            while (list.children.length > 30) {
+                list.removeChild(list.lastChild);
+            }
+        }
+        
+        function addHoneypot() {
+            const input = document.getElementById('honeypotInput');
+            const tool = input.value.trim();
+            if (!tool) return;
+            
+            fetch('/api/honeypot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tool: tool })
+            }).then(r => r.json()).then(data => {
+                if (data.ok) {
+                    input.value = '';
+                    socket.emit('request_update');
+                }
+            });
+        }
+        
+        function removeHoneypot(tool) {
+            fetch(`/api/honeypot/${encodeURIComponent(tool)}`, {
+                method: 'DELETE'
+            }).then(r => r.json()).then(data => {
+                if (data.ok) {
+                    socket.emit('request_update');
+                }
+            });
+        }
+        
+        function showHoneypotAlert(alert) {
+            // Flash the page or show notification
+            document.body.style.backgroundColor = '#2d1a1a';
+            setTimeout(() => {
+                document.body.style.backgroundColor = '';
+            }, 500);
+        }
+        
+        // Enter key for honeypot input
+        document.getElementById('honeypotInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addHoneypot();
+        });
+        
+        // Toggle OWASP expanded list
+        function toggleOwasp() {
+            const expanded = document.getElementById('owaspExpanded');
+            const toggle = document.getElementById('owaspToggle');
+            
+            if (expanded.style.display === 'none') {
+                expanded.style.display = 'block';
+                toggle.textContent = '- Show less';
+            } else {
+                expanded.style.display = 'none';
+                toggle.textContent = '+ Show 5 more';
+            }
+        }
+    </script>
+</body>
+</html>
