@@ -1,8 +1,9 @@
-# Agent Drift Detector
+# Agent-Drift
 
 **Runtime behavioral monitoring for AI agents.**
 
 Detect prompt injection, memory poisoning, behavioral drift, and OWASP Top 10 LLM vulnerabilities in real-time. Think `IDS` for AI agent decisions, or a SIEM for your autonomous systems.
+
 
 ## Why Agent Drift?
 
@@ -17,6 +18,9 @@ Agent Drift monitors behavioral patterns:
 - Honeypot tool access (instant compromise indicator)
 
 When behavior deviates from baseline, you get alerts.
+
+<img width="1830" height="946" alt="agent-drift-v0 1 2-dash" src="https://github.com/user-attachments/assets/865868bc-26a9-4bc4-82ec-3f7e6bde901a" />
+
 
 ---
 
